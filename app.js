@@ -1,12 +1,13 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 
-app.use(cookieParser("Kazuha"));
+app.use(cookieParser(process.env.MYCOOKIESECRETKEY));
 app.use(
   session({
-    secret: "Kazuha 和 Sakura 誰是日本人?",
+    secret: process.env.MYSESSIONSECRETKEY,
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false }, // 在 loaclhost 上面跑，沒有 https
