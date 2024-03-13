@@ -27,6 +27,13 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const verifyUser = (req, res, next) => {
+  if (req.session.isVerifed) {
+    next();
+  } else {
+    return res.send("請先登入系統");
+  }
+};
 
 app.get("/students", async (req, res) => {
   let foundStudent = await Student.find({}).exec();
@@ -37,13 +44,43 @@ app.post("/students", async (req, res) => {
   try {
     let { username, password } = req.body;
     let hashValue = await bcrypt.hash(password, saltRounds);
-    console.log(hashValue);
+    // console.log(hashValue);
     let newStudent = new Student({ username, password: hashValue });
     let savedStudent = await newStudent.save();
     return res.send({ message: "成功新增學生", savedStudent });
   } catch (e) {
     return res.status(400).send(e);
   }
+});
+
+app.post("/students/login", async (req, res) => {
+  try {
+    let { username, password } = req.body;
+    let foundStudent = await Student.findOne({ username }).exec();
+    // console.log(foundStudent);
+    if (!foundStudent) {
+      return res.send("信箱錯誤，查無使用者。");
+    } else {
+      let result = await bcrypt.compare(password, foundStudent.password);
+      if (result) {
+        req.session.isVerifed = true;
+        return res.send("登入成功...");
+      } else {
+        return res.send("登入失敗...");
+      }
+    }
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+app.post("/students/signout", (req, res) => {
+  req.session.isVerifed = false;
+  return res.send("你已經登出...");
+});
+
+app.get("/secret", verifyUser, (req, res) => {
+  return res.send("秘密是，Kazuha 很讚。");
 });
 
 app.listen(3000, () => {
